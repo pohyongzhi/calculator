@@ -1,37 +1,57 @@
 // Functions
-const add = (n1, n2) => {
-    return n1 + n2;
+const add = (n1, n2) => n1 + n2;
+
+const subtract = (n1, n2) => n1 - n2;
+
+const multiply = (n1, n2) => n1 * n2;
+
+const divide = (n1, n2) => (n2 !== 0 ? n1 / n2 : "NaN");
+
+const mod = (n1, n2) => n1 % n2;
+
+const operate = (operator, n1, n2) => {
+    let result;
+
+    switch (operator) {
+        case "add":
+            result = add(n1, n2);
+            break;
+        case "subtract":
+            result = subtract(n1, n2);
+            break;
+        case "multiply":
+            result = multiply(n1, n2);
+            break;
+        case "divide":
+            result = divide(n1, n2);
+            break;
+        case "mod":
+            result = mod(n1, n2);
+            break;
+        default:
+            result = null;
+            break;
+    }
+
+    return roundIfDecimal(result, 2);
 };
 
-const subtract = (n1, n2) => {
-    return n1 - n2;
-};
-
-const multiply = (n1, n2) => {
-    return n1 * n2;
-};
-
-const divide = (n1, n2) => {
-    return n1 / n2;
-};
-
-const operate = (operator) => {
-    if (operator === "add") {
-        add();
-    } else if (operator === "subtract") {
-        subtract();
-    } else if (operator === "multiply") {
-        multiply();
-    } else if (operator === "divide") {
-        divide();
+const roundIfDecimal = (num, decimalPlaces) => {
+    if (Number.isInteger(num)) {
+        return num;
+    } else {
+        const factor = Math.pow(10, decimalPlaces);
+        return Math.round(num * factor) / factor;
     }
 };
 
+const checkDot = (num) => num.includes(".");
+
 // Calculator logic - Limit to a maximum of 9 digits
 let textField = "";
-let num1 = 0;
-let num2 = 0;
-let result = 0;
+let num1 = null;
+let num2 = null;
+let result = null;
 let operator = "";
 
 const display = document.querySelector("#display");
@@ -44,61 +64,57 @@ buttons.forEach((button) => {
         const id = event.target.id;
 
         if (id === "cancel") {
-            textField = 0;
-            display.innerHTML = textField;
+            textField = "";
+            num1 = null;
+            num2 = null;
+            operator = "";
+            display.innerHTML = 0;
         } else if (className === "number-decimal" && id !== "decimal") {
             textField += id;
             display.innerHTML = textField;
-        } else if (className === "number-decimal" && id === "decimal") {
+        } else if (
+            className === "number-decimal" &&
+            id === "decimal" &&
+            !checkDot(textField)
+        ) {
             textField += ".";
             display.innerHTML = textField;
-        }
+        } else if (
+            ["add", "subtract", "multiply", "divide", "mod"].includes(id)
+        ) {
+            if (num1 === null) {
+                num1 = parseFloat(textField);
+            } else if (operator) {
+                num2 = parseFloat(textField);
+                num1 = operate(operator, num1, num2);
+            }
+            operator = id;
+            textField = "";
 
-        if (id === "add") {
-            num1 = parseFloat(textField);
-            operator = "+";
-            textField = "";
-            display.innerHTML = operator;
-        }
-        if (id === "subtract") {
-            num1 = parseFloat(textField);
-            operator = "-";
-            textField = "";
-            display.innerHTML = operator;
-        }
-        if (id === "multiply") {
-            num1 = parseFloat(textField);
-            operator = "*";
-            textField = "";
-            display.innerHTML = operator;
-        }
-        if (id === "divide") {
-            num1 = parseFloat(textField);
-            operator = "/";
-            textField = "";
-            display.innerHTML = operator;
-        }
-
-        if (id === "equal") {
+            if (id === "add") {
+                display.innerHTML = "+";
+            } else if (id === "subtract") {
+                display.innerHTML = "-";
+            } else if (id === "multiply") {
+                display.innerHTML = "*";
+            } else if (id === "divide") {
+                display.innerHTML = "/";
+            } else if (id === "mod") {
+                display.innerHTML = "%";
+            }
+        } else if (id === "equal") {
             num2 = parseFloat(textField);
 
-            switch (operator) {
-                case "+":
-                    result = add(num1, num2);
-                    break;
-                case "-":
-                    result = subtract(num1, num2);
-                    break;
-                case "*":
-                    result = multiply(num1, num2);
-                    break;
-                case "/":
-                    result = divide(num1, num2);
-                    break;
+            if (operator && num1 !== null) {
+                result = operate(operator, num1, num2);
+                num1 = result;
+                display.innerHTML = num1;
+                textField = "";
+                operator = "";
             }
-
-            num1 = result;
-            display.innerHTML = num1;
+        } else if (id === "negate") {
+            textField = (parseFloat(textField) * -1).toString();
+            display.innerHTML = textField;
         }
     });
 });
